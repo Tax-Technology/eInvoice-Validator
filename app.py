@@ -7,7 +7,7 @@ import requests
 st.title("Invoice Validator")
 
 # Domain selection
-domain = st.selectbox("Select Domain", ("order",))  # Add more domains as needed
+domain = "order"  # Use the fixed domain "order" for the demo
 
 # Validation type selection
 validation_type = st.selectbox(
@@ -68,7 +68,7 @@ if st.button("Validate"):
 
         # Perform the API request
         try:
-            api_url = f"https://www.itb.ec.europa.eu/rest/{domain}/api/validate"  # Correct API URL
+            api_url = f"https://www.itb.ec.europa.eu/order/upload"  # Updated API URL for "order"
             st.write(f"Requesting URL: {api_url}")  # Debug line to check the URL
             headers = {"Content-Type": "application/json"}
             response = requests.post(api_url, json=payload, headers=headers)
