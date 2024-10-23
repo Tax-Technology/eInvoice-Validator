@@ -69,6 +69,7 @@ if st.button("Validate"):
         # Perform the API request
         try:
             api_url = f"https://www.itb.ec.europa.eu/rest/{domain}/api/validate"  # Correct API URL
+            st.write(f"Requesting URL: {api_url}")  # Debug line to check the URL
             headers = {"Content-Type": "application/json"}
             response = requests.post(api_url, json=payload, headers=headers)
 
