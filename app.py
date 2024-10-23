@@ -2,7 +2,12 @@ import streamlit as st
 import requests
 
 # Streamlit app to replicate the Invoice Validator Tool
+
+# Title of the app
 st.title("Invoice Validator")
+
+# Domain selection
+domain = st.selectbox("Select Domain", ("order",))  # Add more domains as needed
 
 # Validation type selection
 validation_type = st.selectbox(
@@ -31,42 +36,46 @@ elif input_method == "Direct Input":
 
 # Button to submit the validation request
 if st.button("Validate"):
-
     if validation_type == "Select Validation Type":
         st.error("Please select a validation type.")
     else:
-        # Prepare the payload based on user input
-        input_data = None
+        # Prepare the payload
         if file_to_validate is not None:
-            # Read the content of the uploaded file
-            input_data = file_to_validate.getvalue().decode("utf-8")
+            xml_content = file_to_validate.read().decode('utf-8')  # Read and decode file content
+            content_to_validate = xml_content
         elif uri_to_validate:
-            input_data = uri_to_validate  # Assuming this will be processed by the API
+            content_to_validate = uri_to_validate
         elif string_to_validate:
-            input_data = string_to_validate
-
-        if input_data is None:
+            content_to_validate = string_to_validate
+        else:
             st.error("Please provide input for validation.")
             st.stop()
 
-        # Prepare the payload for the API request
+        # Map validation type to API's expected type
+        validation_type_map = {
+            "UBL Invoice XML - release 1.3.13": "ubl",
+            "CII Invoice XML - release 1.3.13": "cii",
+            "UBL Credit Note XML - release 1.3.13": "credit"
+        }
+        
+        selected_validation_type = validation_type_map[validation_type]
+
+        # Prepare the JSON payload
         payload = {
-            "contentToValidate": input_data,
-            "validationType": validation_type,  # This might need to match the API's expected format
-            # You can add other parameters like externalSchemas, locale, etc. if required
+            'contentToValidate': content_to_validate,
+            'validationType': selected_validation_type  # Example value for validation type
         }
 
         # Perform the API request
         try:
-            api_url = "https://www.itb.ec.europa.eu/vitb/rest/api/validate"  # Correct API endpoint for validation
-            with st.spinner('Validating invoice...'):
-                response = requests.post(api_url, json=payload)
+            api_url = f"https://www.itb.ec.europa.eu/rest/{domain}/api/validate"  # Correct API URL
+            headers = {"Content-Type": "application/json"}
+            response = requests.post(api_url, json=payload, headers=headers)
 
             # Display the result
             if response.status_code == 200:
                 st.success("Invoice successfully validated!")
-                validation_results = response.json()
-                st.json(validation_results)  # Show the JSON response
+                st.json(response.json())  # Show the JSON response
             else:
                 st.error(f"Validation failed with status code: {response.status_code}")
                 st.text(response.text)
