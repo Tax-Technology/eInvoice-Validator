@@ -12,16 +12,7 @@ wsdl_url = "https://www.itb.ec.europa.eu/invoice/api/validation?wsdl"
 client = Client(wsdl_url)
 
 # Streamlit App
-st.image("https://www.itb.ec.europa.eu/files/invoice_logo.png", width=200)
 st.title("eInvoice Validator")
-st.markdown("""
-    This is a service offered by the European Commission's DIGIT as part of the 
-    [Digital Europe Programme](https://ec.europa.eu/digital-building-blocks/wikis/display/DIGITAL/About+us), 
-    allowing you to validate electronic invoices against the requirements of the 
-    [European Standard on eInvoicing](https://ec.europa.eu/digital-building-blocks/wikis/display/DIGITAL/What+is+eInvoicing).
-    Questions and feedback on this service can be sent to 
-    [EC-EINVOICING-SUPPORT@ec.europa.eu](mailto:EC-EINVOICING-SUPPORT@ec.europa.eu).
-""")
 
 # File or URI or Direct Input selection
 validation_method = st.selectbox(
@@ -106,10 +97,3 @@ if xml_data and st.button("Validate"):
     except Exception as e:
         st.error(f"An error occurred: {e}")
 
-# Footer
-st.markdown("""
-    This service is powered by the Interoperability Test Bed, a conformance testing service 
-    offered by the European Commission's DG DIGIT for projects involved in the delivery of 
-    cross-border public services. Find out more 
-    [here](https://joinup.ec.europa.eu/solution/interoperability-test-bed).
-""")
