@@ -1,9 +1,6 @@
 import streamlit as st
 from zeep import Client
-from zeep.transports import Transport
 import requests
-from io import BytesIO
-import xml.etree.ElementTree as ET
 
 # SOAP API WSDL URL
 wsdl_url = "https://www.itb.ec.europa.eu/invoice/api/validation?wsdl"
@@ -63,30 +60,29 @@ validation_type_mapping = {
     "UBL Credit Note XML - release 1.3.13": "credit"
 }
 
-# Checkbox for including external artefacts
-include_external = st.checkbox("Include external artefacts (e.g., XML Schema, Schematron)")
-
-# XML Schema and Schematron inputs (conditionally displayed if checkbox is selected)
-external_schema = None
-external_schematron = None
-if include_external:
-    st.text("Provide additional artefacts for validation")
-    external_schema = st.text_input("XML Schema URL")
-    external_schematron = st.text_input("Schematron URL")
-
 # Validate button
 if xml_data and st.button("Validate"):
     # Attempt validation if XML is provided
     try:
-        # Optional external artefact handling can be added here if needed
-        
         # Make SOAP API call
         with st.spinner("Validating..."):
-            validation_response = client.service.validate(
-                xmlContent=xml_data,
-                validationType=validation_type_mapping[validation_type]
-            )
-        
+            # Prepare input data according to the required structure
+            validation_input = {
+                "sessionId": "",  # You may need to generate or provide a valid session ID if required
+                "config": [
+                    {
+                        "validationType": validation_type_mapping[validation_type]
+                    }
+                ],
+                "input": [
+                    {
+                        "_value_1": xml_data.decode("utf-8")
+                    }
+                ]
+            }
+            
+            validation_response = client.service.ValidateRequest(validation_input)
+
         # Display validation result
         if validation_response:
             st.success("Validation Successful")
@@ -96,4 +92,3 @@ if xml_data and st.button("Validate"):
     
     except Exception as e:
         st.error(f"An error occurred: {e}")
-
