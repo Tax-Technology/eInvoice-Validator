@@ -66,22 +66,16 @@ if xml_data and st.button("Validate"):
     try:
         # Make SOAP API call
         with st.spinner("Validating..."):
-            # Prepare input data according to the required structure
-            validation_input = {
-                "sessionId": "",  # You may need to generate or provide a valid session ID if required
-                "config": [
-                    {
-                        "validationType": validation_type_mapping[validation_type]
-                    }
-                ],
-                "input": [
-                    {
-                        "_value_1": xml_data.decode("utf-8")
-                    }
-                ]
+            # Prepare the parameters for the validate operation
+            parameters = {
+                'sessionId': 'your_session_id_here',  # If required, modify based on your API requirements
+                'config': [],  # Adjust this if your API requires configuration options
+                'input': [{
+                    'xmlContent': xml_data.decode("utf-8"),  # Assuming this is the expected field in ValidateRequest
+                    'validationType': validation_type_mapping[validation_type]
+                }]
             }
-            
-            validation_response = client.service.ValidateRequest(validation_input)
+            validation_response = client.service.validate(parameters)
 
         # Display validation result
         if validation_response:
@@ -89,6 +83,6 @@ if xml_data and st.button("Validate"):
             st.write("Validation Response:", validation_response)
         else:
             st.error("Validation Failed")
-    
+
     except Exception as e:
         st.error(f"An error occurred: {e}")
