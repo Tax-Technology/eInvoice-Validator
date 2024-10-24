@@ -1,84 +1,63 @@
 import streamlit as st
-import requests
+from zeep import Client
+import xml.etree.ElementTree as ET
 
-# Streamlit app to replicate the Invoice Validator Tool
+# SOAP WSDL URL
+WSDL_URL = 'https://www.itb.ec.europa.eu/invoice/api/validation?wsdl'
 
-# Title of the app
-st.title("Invoice Validator")
+# Initialize SOAP client
+client = Client(wsdl=WSDL_URL)
 
-# Domain selection
-domain = "order"  # Use the fixed domain "order" for the demo
+# App title
+st.title("eInvoice Validator")
 
-# Validation type selection
-validation_type = st.selectbox(
-    "Validate as",
-    ("Select Validation Type", "UBL Invoice XML - release 1.3.13", 
-     "CII Invoice XML - release 1.3.13", "UBL Credit Note XML - release 1.3.13")
+# Sidebar options for validation type
+validation_type = st.sidebar.selectbox(
+    "Select Validation Type",
+    ("UBL Invoice XML - release 1.3.13", "CII Invoice XML - release 1.3.13", "UBL Credit Note XML - release 1.3.13")
 )
 
-# Choose how to provide input (file, URI, or direct input)
-input_method = st.selectbox(
-    "Input Method",
-    ("Select Input Method", "File Upload", "URI Input", "Direct Input")
+# Map validation type to the values expected by the SOAP API
+validation_type_map = {
+    "UBL Invoice XML - release 1.3.13": "ubl",
+    "CII Invoice XML - release 1.3.13": "cii",
+    "UBL Credit Note XML - release 1.3.13": "credit"
+}
+validation_type_value = validation_type_map[validation_type]
+
+# Allow user to upload file, input URL, or paste XML
+option = st.selectbox(
+    "Choose Input Type",
+    ["Upload XML File", "Input URL", "Direct XML Input"]
 )
 
-file_to_validate = None
-uri_to_validate = None
-string_to_validate = None
+if option == "Upload XML File":
+    uploaded_file = st.file_uploader("Choose an XML file to validate", type="xml")
+    if uploaded_file is not None:
+        file_content = uploaded_file.read().decode("utf-8")
+elif option == "Input URL":
+    file_url = st.text_input("Enter the URL of the XML file to validate")
+    if file_url:
+        # You may fetch content from the URL if required
+        file_content = file_url
+elif option == "Direct XML Input":
+    file_content = st.text_area("Paste the XML content directly")
 
-# Based on the selected input method, show relevant input fields
-if input_method == "File Upload":
-    file_to_validate = st.file_uploader("Upload Invoice File", type=["xml"])
-elif input_method == "URI Input":
-    uri_to_validate = st.text_input("Enter URI of the invoice")
-elif input_method == "Direct Input":
-    string_to_validate = st.text_area("Paste XML content of the invoice here")
-
-# Button to submit the validation request
-if st.button("Validate"):
-    if validation_type == "Select Validation Type":
-        st.error("Please select a validation type.")
-    else:
-        # Prepare the payload
-        if file_to_validate is not None:
-            xml_content = file_to_validate.read().decode('utf-8')  # Read and decode file content
-            content_to_validate = xml_content
-        elif uri_to_validate:
-            content_to_validate = uri_to_validate
-        elif string_to_validate:
-            content_to_validate = string_to_validate
-        else:
-            st.error("Please provide input for validation.")
-            st.stop()
-
-        # Map validation type to API's expected type
-        validation_type_map = {
-            "UBL Invoice XML - release 1.3.13": "ubl",
-            "CII Invoice XML - release 1.3.13": "cii",
-            "UBL Credit Note XML - release 1.3.13": "credit"
-        }
-        
-        selected_validation_type = validation_type_map[validation_type]
-
-        # Prepare the JSON payload
-        payload = {
-            'contentToValidate': content_to_validate,
-            'validationType': selected_validation_type  # Example value for validation type
-        }
-
-        # Perform the API request
+# Validate button
+if st.button("Validate Invoice"):
+    if file_content:
         try:
-            api_url = f"https://www.itb.ec.europa.eu/order/upload"  # Updated API URL for "order"
-            st.write(f"Requesting URL: {api_url}")  # Debug line to check the URL
-            headers = {"Content-Type": "application/json"}
-            response = requests.post(api_url, json=payload, headers=headers)
+            # Assuming a SOAP API operation called `validateInvoice` (Check WSDL for exact names)
+            response = client.service.validateInvoice(
+                validationType=validation_type_value,
+                fileContent=file_content
+            )
 
-            # Display the result
-            if response.status_code == 200:
-                st.success("Invoice successfully validated!")
-                st.json(response.json())  # Show the JSON response
-            else:
-                st.error(f"Validation failed with status code: {response.status_code}")
-                st.text(response.text)
+            # Process and display the response
+            st.success("Invoice validation successful!")
+            st.write(response)
+
         except Exception as e:
             st.error(f"An error occurred: {e}")
+    else:
+        st.error("Please provide the invoice content for validation.")
